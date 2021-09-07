@@ -4,6 +4,7 @@ Capture traffic camera jpgs to a file by camera and by day
 
 """
 
+import hashlib
 import os
 import time
 import urllib.request
@@ -16,6 +17,7 @@ class Camera:
     def __init__(self, name, url):
         self.name = name
         self.url = url
+        self.current_image = None
 
     def __str__(self):
         return f"Camera: {self.name}"
@@ -38,6 +40,11 @@ def make_filepath(camera_name):
     return file_path
 
 
+def get_image(url):
+    """return image blob from url"""
+    return urllib.request.urlopen(url).read()
+
+
 def save_camera_image(camera, filepath=None):
     """save image of camera to file"""
 
@@ -47,7 +54,7 @@ def save_camera_image(camera, filepath=None):
             filepath = make_filepath(camera.name)
         urlfile = open(filepath, "wb")
         # TODO validate file before writing
-        urlfile.write(urllib.request.urlopen(camera.url).read())
+        urlfile.write(camera.current_image)
     except Exception as err:
         urlfile.close()
         os.remove(filepath)
@@ -56,14 +63,21 @@ def save_camera_image(camera, filepath=None):
 
 def main():
     count = -1
+    previous_hashes = set()
     while True:
         # TODO make this easier to understand
         count = (count + 1) % 5
         if count == 0 and 4 < datetime.now().hour < 22:
             cameras = [Camera(name=k, url=v) for k, v in camera_dict.items()]
+            image_hashes = set()
             for camera in cameras:
-                save_camera_image(camera)
+                camera.current_image = get_image(camera.url)
+                image_hash = hashlib.md5(camera.current_image).hexdigest()
+                image_hashes.add(image_hash)
+                if image_hash not in previous_hashes:
+                    save_camera_image(camera)
                 time.sleep(1)
+            previous_hashes = image_hashes.copy()
         time.sleep(24)
 
 
