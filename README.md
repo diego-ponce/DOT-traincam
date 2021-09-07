@@ -3,9 +3,11 @@
 
 ## Usage
 save images (to `images` directory, nested folder structure per camera per day) 
+
 `python save_camera_images.py`
 
 convert yesterdays images to mp4 (requires ffmpeg)
+
 `python convert_to_movie`
 
 ## Requirements
