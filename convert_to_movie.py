@@ -66,10 +66,10 @@ def create_mp4(camera, date):
 def main():
     today = date.today()
     yesterday = today - timedelta(days=1)
-    date_str = str(yesterday).split(" ")[0]
+    date_str = str(today).split(" ")[0]
     cameras = [Camera(name=k, url=v) for k, v in camera_dict.items()]
     camera = cameras[1]
-    for camera in cameras[:1]:
+    for camera in cameras:
         create_mp4(camera, date_str)
 
 
