@@ -5,13 +5,25 @@ Capture traffic camera jpgs to a file by camera and by day
 """
 
 import hashlib
+import logging
 import os
 import time
 import urllib.request
 from datetime import datetime
+from socket import ConnectionRefusedError
+from urllib.error import URLError
 
 from camera import Camera
 from trainlist import camera_dict
+
+logging.basicConfig(
+    filename="save_camera_images.log",
+    encoding="utf-8",
+    level=logging.DEBUG,
+    format="%(asctime)s %(message)s",
+)
+
+RETRIABLE_EXCEPTIONS = (ConnectionRefusedError, URLError)
 
 
 def make_filepath(camera_name):
@@ -28,9 +40,21 @@ def make_filepath(camera_name):
     return file_path
 
 
-def get_image(url):
+def get_image(url, max_retries=5, wait_time=2):
     """return image blob from url"""
-    return urllib.request.urlopen(url).read()
+    for _ in range(max_retries):
+        try:
+            image = urllib.request.urlopen(url).read()
+            break
+        except RETRIABLE_EXCEPTIONS as e:
+            error = f"a retriable error occurred: {e}"
+            logging.error(error)
+            time.sleep(wait_time)
+    else:
+        error = f"max retries exceeded for {url}"
+        logging.error(error)
+        return None
+    return image
 
 
 def save_camera_image(camera, filepath=None):
@@ -46,7 +70,7 @@ def save_camera_image(camera, filepath=None):
     except Exception as err:
         urlfile.close()
         os.remove(filepath)
-        print(str(err) + " " + filepath)
+        logging.error(err)
 
 
 def main():
@@ -60,6 +84,8 @@ def main():
             image_hashes = set()
             for camera in cameras:
                 camera.current_image = get_image(camera.url)
+                if camera.current_image is None:
+                    continue
                 image_hash = hashlib.md5(camera.current_image).hexdigest()
                 image_hashes.add(image_hash)
                 if image_hash not in previous_hashes:
