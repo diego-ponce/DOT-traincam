@@ -10,7 +10,6 @@ import os
 import time
 import urllib.request
 from datetime import datetime
-from socket import ConnectionRefusedError
 from urllib.error import URLError
 
 from camera import Camera
@@ -23,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-RETRIABLE_EXCEPTIONS = (ConnectionRefusedError, URLError)
+RETRIABLE_EXCEPTIONS = (URLError,)
 
 
 def make_filepath(camera_name):
@@ -74,6 +73,7 @@ def save_camera_image(camera, filepath=None):
 
 
 def main():
+    logging.info("Starting save_camera_images.")
     count = -1
     previous_hashes = set()
     while True:
