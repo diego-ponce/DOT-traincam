@@ -22,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-RETRIABLE_EXCEPTIONS = (URLError,)
+RETRIABLE_EXCEPTIONS = (URLError, ConnectionResetError)
 
 
 def make_filepath(camera_name):

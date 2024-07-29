@@ -1,4 +1,4 @@
-"""Converts a directory of images into a movie using FFMPEG"""
+"""Converts a directory of images into a movie using FFMPEG."""
 import glob
 import os
 import subprocess
@@ -9,7 +9,7 @@ from trainlist import camera_dict
 
 
 def convert_to_mp4(inpath="", outfile=None, framerate=1):
-    """calls ffmpeg to convert jpg files to mp4"""
+    """Calls ffmpeg to convert jpg files to mp4."""
 
     if outfile is None:
         outfile = "out.mp4"
@@ -32,14 +32,14 @@ def convert_to_mp4(inpath="", outfile=None, framerate=1):
 
 
 def directory_contains_extensions(path=".", search_list=[".jpg"]):
-    """checks directory for a list of extensions"""
+    """Checks directory for a list of extensions."""
 
     extensions = {os.path.splitext(x)[1] for x in os.listdir(path)}
     return not not set(search_list).intersection(extensions)
 
 
 def standardized_framerate(dirname, filetype, duration):
-    """returns a framerate to generate a video of certain duration"""
+    """Returns a framerate to generate a video of certain duration."""
 
     if duration < 0:
         raise Exception("duration must be a positive number")
@@ -54,10 +54,16 @@ def standardized_framerate(dirname, filetype, duration):
 
 
 def create_mp4(camera, date):
-    """creates an mp4 from the directory for a given camera on a given date"""
+    """Creates an mp4 from the directory for a given camera on a given date."""
 
-    infile = os.path.join("./images/", camera.name, date)
-    outfile = os.path.join("./mp4s/", camera.name, date + ".mp4")
+    if isinstance(camera, Camera):
+        name = camera.name
+    elif isinstance(camera, str):
+        name = camera
+    else:
+        raise Error("camera not a valid string or Camera object")
+    infile = os.path.join("./images/", name, date)
+    outfile = os.path.join("./mp4s/", name, date + ".mp4")
     os.makedirs(os.path.dirname(outfile), exist_ok=True)
     framerate = standardized_framerate(infile, "jpg", 180)
     convert_to_mp4(inpath=infile, outfile=outfile, framerate=framerate)
@@ -65,12 +71,29 @@ def create_mp4(camera, date):
 
 def main():
     today = date.today()
-    yesterday = today - timedelta(days=1)
-    date_str = str(today).split(" ")[0]
-    cameras = [Camera(name=k, url=v) for k, v in camera_dict.items()]
-    camera = cameras[1]
-    for camera in cameras:
-        create_mp4(camera, date_str)
+    find_date = today - timedelta(days=1)
+    find_date_str = str(find_date).split(" ")[0]
+
+    # walk for directories
+    # extract date
+    # loop through
+    # check for mp4 file
+    # add if not already there
+    # exclude today
+    for root, dirs, files in os.walk("./images"):
+        for folder in dirs:
+            cam_path, date_str = os.path.split(os.path.join(root, folder))
+            base, camera = os.path.split(cam_path)
+            if date_str == find_date_str:
+                try:
+                    create_mp4(camera, date_str)
+                except Exception as e:
+                    print(f"could not write {camera} for {date_str}\n{e}")
+    print("finished writing mp4s")
+    # cameras = [Camera(name=k, url=v) for k, v in camera_dict.items()]
+    # camera = cameras[1]
+    # for camera in cameras:
+    #     create_mp4(camera, date_str)
 
 
 if __name__ == "__main__":
